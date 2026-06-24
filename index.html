@@ -3,132 +3,312 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ST★R-NET - Isolir Notice</title>
+<title>WiFi Star.Net Dashboard</title>
+
 <style>
-body{
-    margin:0;
-    font-family:Arial, sans-serif;
-    background: radial-gradient(circle at top,#0b1220,#050816);
-    color:#fff;
+body { font-family: Arial; background:#f4f6f9; padding:10px; margin:0; }
+
+h2 { text-align:center; font-size:18px; }
+
+.topbar {
+  display:flex; justify-content:space-between; align-items:center;
+  margin-bottom:10px; flex-wrap:wrap; gap:10px;
 }
 
-.header{
-    text-align:center;
-    padding:25px 10px;
-    background: linear-gradient(90deg,#0ea5e9,#6366f1,#8b5cf6);
-    box-shadow:0 5px 20px rgba(0,0,0,0.5);
-}
-.header h1{
-    margin:0;
-    font-size:28px;
-    letter-spacing:2px;
-}
-.header p{
-    margin:5px 0 0;
-    font-size:12px;
-    opacity:0.9;
+.card {
+  background:#fff; padding:15px; margin-bottom:15px;
+  border-radius:8px; text-align:center; font-weight:bold;
+  color:#28a745;
 }
 
-.container{
-    max-width:520px;
-    margin:30px auto;
-    background:#0f172a;
-    border-radius:18px;
-    padding:25px;
-    box-shadow:0 10px 40px rgba(0,0,0,0.6);
-    text-align:center;
+.form {
+  background:#fff; padding:15px; border-radius:8px;
+  margin-bottom:20px; display:flex; flex-wrap:wrap; gap:8px;
 }
 
-.logo img{
-    width:180px;
-    margin-bottom:15px;
-    border-radius:12px;
+input, select {
+  padding:10px; border:1px solid #ddd; border-radius:5px;
+  flex:1 1 100%;
 }
 
-.status{
-    display:inline-block;
-    padding:6px 14px;
-    background:#3b82f6;
-    border-radius:20px;
-    font-weight:bold;
-    font-size:12px;
-    margin:10px 0;
+button {
+  padding:10px; background:#007BFF; color:white;
+  border:none; cursor:pointer; border-radius:5px;
+  flex:1 1 auto;
 }
 
-.alert{
-    background:#111827;
-    padding:15px;
-    border-radius:12px;
-    margin-top:10px;
-    border:1px solid #1f2937;
+button:hover { background:#0056b3; }
+
+.table-wrapper { overflow-x:auto; }
+
+table {
+  width:100%; border-collapse:collapse; background:white;
+  min-width:700px;
 }
 
-.grid{
-    display:grid;
-    grid-template-columns:repeat(3,1fr);
-    gap:10px;
-    margin-top:20px;
+th, td {
+  border:1px solid #ddd; padding:8px; text-align:center; font-size:12px;
 }
 
-.card{
-    background:#0b1220;
-    padding:12px;
-    border-radius:12px;
-    font-size:12px;
+th { background:#007BFF; color:white; }
+
+.lunas { color:green; font-weight:bold; }
+.belum { color:red; font-weight:bold; }
+
+.hapus { background:red; color:white; padding:5px 8px; border-radius:4px; }
+
+.edit { background:orange; color:white; padding:5px 8px; border-radius:4px; }
+
+.wa-btn {
+  background:green;
+  color:white;
+  padding:6px 10px;
+  border:none;
+  border-radius:4px;
+  cursor:pointer;
 }
 
-.card b{
-    display:block;
-    margin-top:5px;
-    color:#38bdf8;
+.btn-export { background:#dc3545; }
+
+.login-box{
+  max-width:300px;
+  margin:100px auto;
+  background:#fff;
+  padding:20px;
+  border-radius:10px;
+  text-align:center;
 }
 
-.btn{
-    display:inline-block;
-    margin-top:15px;
-    padding:10px 14px;
-    border-radius:10px;
-    text-decoration:none;
-    font-weight:bold;
-    color:#fff;
-}
+.hidden{ display:none; }
 
-.wa{background:#22c55e;}
-.pay{background:#3b82f6;}
-
-.footer{
-    margin-top:20px;
-    font-size:11px;
-    opacity:0.6;
+@media (max-width:600px){
+  body{padding:8px;}
+  h2{font-size:16px;}
+  .form{flex-direction:column;}
 }
 </style>
 </head>
 
 <body>
 
-<div class="header">
-    <h1>ST★R-NET</h1>
-    <p>INTERNET TANPA BATAS KOUTA</p>
+<!-- LOGIN -->
+<div id="loginPage" class="login-box">
+  <h3>STAR.NET</h3>
+  <input type="text" id="user" placeholder="Username"><br><br>
+  <input type="password" id="pass" placeholder="Password"><br><br>
+  <button onclick="login()">Login</button>
 </div>
 
-<div class="container">
+<!-- DASHBOARD -->
+<div id="app" class="hidden">
 
-    <div class="status">YUK BAYAR TAGIHANMU SEKARANG!</div>
+<div class="topbar">
+  <h2>Dashboard WiFi STAR.NET</h2>
+  <div>
+    <button onclick="exportPDF()" class="btn-export">📄 Export PDF</button>
+    <button onclick="logout()" style="background:black;color:white;">Logout</button>
+  </div>
+</div>
 
-    <div class="alert">
-        Layanan internet Anda sementara dihentikan karena masa aktif telah berakhir atau terdapat tunggakan pembayaran.
-    </div>
+<div class="card">
+  💰 Total Pemasukan: Rp <span id="total">0</span>
+</div>
 
-  
+<div class="form">
+  <input type="text" id="nama" placeholder="Nama Pelanggan">
 
-    <a class="btn wa" href="https://wa.me/6282193472105">HUBUNGI ADMIN</a>
-    <a class="btn pay" href="#">CEK TAGIHAN</a>
+  <select id="paket">
+    <option value="60000">Paket 60k</option>
+    <option value="70000">Paket 70K</option>
+    <option value="100000">Paket 100K</option>
+    <option value="150000">Paket 150K</option>
+    <option value="200000">Paket 200K</option>
+  </select>
 
-    <div class="footer">
-        © 2026 ST★R-NET
-    </div>
+  <select id="status">
+    <option value="Lunas">Lunas</option>
+    <option value="Belum">Belum Bayar</option>
+  </select>
+
+  <select id="alamat">
+    <option value="bulo-buloa">Bulo-buloa</option>
+    <option value="papanloe">Papanloe</option>
+    <option value="bambalie">Bambalie</option>
+  </select>
+
+  <input type="text" id="wa" placeholder="Nomor WhatsApp">
+
+  <button onclick="tambahData()" id="btnSubmit">Tambah</button>
+</div>
+
+<div class="table-wrapper">
+<table>
+<thead>
+<tr>
+  <th>No</th>
+  <th>Nama</th>
+  <th>Paket</th>
+  <th>Status</th>
+  <th>Alamat</th>
+  <th>WhatsApp</th>
+  <th>Aksi</th>
+</tr>
+</thead>
+<tbody id="tabel"></tbody>
+</table>
+</div>
 
 </div>
+
+<script>
+/* ===== LOGIN ===== */
+function login(){
+  let u = user.value;
+  let p = pass.value;
+
+  if(u === "admin" && p === "123"){
+    localStorage.setItem("login","true");
+    showApp();
+  } else {
+    alert("Login gagal!");
+  }
+}
+
+function logout(){
+  localStorage.removeItem("login");
+  location.reload();
+}
+
+function showApp(){
+  document.getElementById("loginPage").classList.add("hidden");
+  document.getElementById("app").classList.remove("hidden");
+}
+
+if(localStorage.getItem("login") === "true"){
+  showApp();
+}
+
+/* ===== DATA SYSTEM ===== */
+let data = JSON.parse(localStorage.getItem("wifiData")) || [];
+let editIndex = null;
+
+function simpanData(){
+  localStorage.setItem("wifiData", JSON.stringify(data));
+}
+
+function hitungTotal(){
+  let total = 0;
+  data.forEach(i=>{
+    if(i.status==="Lunas") total += Number(i.paket);
+  });
+  document.getElementById("total").innerText =
+    total.toLocaleString("id-ID");
+}
+
+function formatWA(num){
+  if(!num) return "";
+  num = num.toString().replace(/\D/g,"");
+  if(num.startsWith("0")) num = "62"+num.substring(1);
+  if(!num.startsWith("62")) num = "62"+num;
+  return num;
+}
+
+function renderData(){
+  let tabel = document.getElementById("tabel");
+  tabel.innerHTML = "";
+
+  data.forEach((item,index)=>{
+
+    let statusClass = item.status==="Lunas"?"lunas":"belum";
+
+    let waFix = formatWA(item.wa);
+    let waLink = waFix
+      ? `https://wa.me/${waFix}`
+      : "#";
+
+    tabel.innerHTML += `
+    <tr>
+      <td>${index+1}</td>
+      <td>${item.nama}</td>
+      <td>Rp ${Number(item.paket).toLocaleString()}</td>
+
+      <td class="${statusClass}">
+        <button onclick="toggleStatus(${index})"
+          style="background:${item.status==='Lunas'?'green':'red'};color:white;border:none;padding:5px;">
+          ${item.status}
+        </button>
+      </td>
+
+      <td>${item.alamat}</td>
+
+      <td>
+        <button class="wa-btn" onclick="window.open('${waLink}','_blank')">
+          WA
+        </button>
+      </td>
+
+      <td>
+        <button class="edit" onclick="editData(${index})">✏️</button>
+        <button class="hapus" onclick="hapusData(${index})">X</button>
+      </td>
+    </tr>
+    `;
+  });
+
+  hitungTotal();
+}
+
+function tambahData(){
+  let obj = {
+    nama: nama.value,
+    paket: paket.value,
+    wa: wa.value,
+    alamat: alamat.value,
+    status: status.value
+  };
+
+  if(editIndex === null){
+    data.push(obj);
+  }else{
+    data[editIndex] = obj;
+    editIndex = null;
+    btnSubmit.innerText = "Tambah";
+  }
+
+  simpanData();
+  renderData();
+}
+
+function editData(i){
+  let d = data[i];
+  nama.value = d.nama;
+  paket.value = d.paket;
+  wa.value = d.wa;
+  alamat.value = d.alamat;
+  status.value = d.status;
+
+  editIndex = i;
+  btnSubmit.innerText = "Update";
+}
+
+function toggleStatus(i){
+  data[i].status = data[i].status==="Lunas"?"Belum":"Lunas";
+  simpanData(); renderData();
+}
+
+function hapusData(i){
+  data.splice(i,1);
+  simpanData(); renderData();
+}
+
+function exportPDF(){
+  html2pdf().from(document.body).save("tagihan-wifi.pdf");
+}
+
+renderData();
+</script>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 
 </body>
 </html>
