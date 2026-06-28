@@ -3,23 +3,23 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPPoE PRO LIVE + EDIT & ADD MAP</title>
+<title>PPPoE PRO LIVE DASHBOARD FIX</title>
 
-<!-- Tailwind CSS -->
-<script src="https://tailwindcss.com"></script>
+<!-- Tailwind CDN -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-<!-- Leaflet.js -->
-<link rel="stylesheet" href="https://unpkg.com"/>
-<script src="https://unpkg.com"></script>
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
 <!-- Font Awesome -->
-<link rel="stylesheet" href="https://cloudflare.com">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
 <style>
 body { background:#0b111e; color:#e2e8f0; }
 #map { height:100%; width:100%; }
-.marker-online { color:#22c55e; font-size:22px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); }
-.marker-offline { color:#ef4444; font-size:22px; filter: drop-shadow(0px 2px 4px rgba(0,0,0,0.5)); }
+.marker-online { color:#22c55e; font-size:22px; }
+.marker-offline { color:#ef4444; font-size:22px; }
 .marker-moving { color:#eab308; font-size:24px; }
 .add-mode-active { cursor: crosshair !important; }
 </style>
@@ -27,192 +27,138 @@ body { background:#0b111e; color:#e2e8f0; }
 
 <body class="h-screen flex flex-col overflow-hidden">
 
-<!-- HEADER -->
-<header class="bg-slate-900 border-b border-slate-800 p-3 flex justify-between items-center">
+<header class="bg-slate-900 border-b border-slate-800 p-3 flex justify-between">
     <div>
         <h1 class="text-blue-400 font-bold text-sm">PPPoE LIVE ISP DASHBOARD</h1>
-        <p class="text-xs text-slate-400">Active Users + Editable House Map</p>
-    </div>
-
-    <div class="flex gap-2 text-xs">
-        <div class="bg-slate-800 px-3 py-1 rounded">TOTAL: <span id="total">0</span></div>
-        <div class="bg-green-900 px-3 py-1 rounded">ONLINE: <span id="online">0</span></div>
-        <div class="bg-red-900 px-3 py-1 rounded">OFFLINE: <span id="offline">0</span></div>
+        <p class="text-xs text-slate-400">Realtime + Map Edit</p>
     </div>
 </header>
 
 <div class="flex flex-1 overflow-hidden">
 
-    <!-- SIDEBAR -->
-    <aside class="w-80 bg-slate-900 p-3 flex flex-col gap-3 border-r border-slate-800">
-        <input id="search" class="w-full p-2 bg-slate-800 rounded text-xs text-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Cari pelanggan...">
-        
-        <!-- LIST CONTAINER -->
-        <div id="list" class="flex-1 overflow-y-auto space-y-2 pr-1"></div>
+<!-- SIDEBAR -->
+<aside class="w-80 bg-slate-900 p-3 flex flex-col gap-2">
+    <input id="search" oninput="searchQuery=this.value.toLowerCase();render()"
+    class="p-2 bg-slate-800 rounded text-xs" placeholder="Cari pelanggan...">
 
-        <!-- ACTION BUTTONS -->
-        <div class="pt-2 border-t border-slate-800 flex flex-col gap-2">
-            <button id="btn-toggle-add" onclick="toggleAddMode()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 text-white font-bold text-xs rounded transition duration-150 flex items-center justify-center gap-2 shadow-lg shadow-blue-900/30">
-                <i class="fas fa-user-plus"></i> <span id="btn-text">Tambah Pelanggan Baru</span>
-            </button>
-            <p id="add-hint" class="text-[10px] text-amber-400 hidden text-center italic animate-pulse"><i class="fas fa-mouse-pointer"></i> Klik lokasi rumah pada peta sekarang</p>
-        </div>
-    </aside>
+    <div id="list" class="flex-1 overflow-y-auto space-y-2"></div>
 
-    <!-- MAP -->
-    <div id="map" class="flex-1"></div>
+    <button onclick="toggleAddMode()" class="bg-blue-600 p-2 rounded text-xs font-bold">
+        <i class="fa fa-plus"></i> Tambah Pelanggan
+    </button>
 
-</div>
+    <p id="hint" class="text-xs text-yellow-400 hidden">Klik peta untuk tambah titik</p>
+</aside>
 
-<!-- MODAL INPUT PELANGGAN BARU -->
-<div id="modal-add" class="fixed inset-0 bg-black/60 z-[9999] backdrop-blur-sm hidden flex items-center justify-center p-4">
-    <div class="bg-slate-900 border border-slate-800 rounded-lg w-full max-w-sm overflow-hidden shadow-2xl">
-        <div class="bg-slate-800 px-4 py-3 border-b border-slate-700 flex justify-between items-center">
-            <h3 class="text-sm font-bold text-blue-400 flex items-center gap-2"><i class="fas fa-home"></i> Data Rumah Pelanggan Baru</h3>
-            <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fas fa-times"></i></button>
-        </div>
-        <form id="form-customer" onsubmit="saveNewCustomer(event)" class="p-4 space-y-3 text-xs">
-            <div>
-                <label class="block text-slate-400 mb-1">Nama Pelanggan / No. Rumah</label>
-                <input type="text" id="new-name" required class="w-full p-2 bg-slate-800 border border-slate-700 rounded text-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Contoh: Pak Anto (Blok C3)">
-            </div>
-            <div>
-                <label class="block text-slate-400 mb-1">IP Address PPPoE</label>
-                <input type="text" id="new-ip" required class="w-full p-2 bg-slate-800 border border-slate-700 rounded font-mono text-white focus:outline-none focus:ring-1 focus:ring-blue-500" placeholder="Contoh: 10.10.1.25">
-            </div>
-            <div class="grid grid-cols-2 gap-2">
-                <div>
-                    <label class="block text-slate-400 mb-1">Latitude</label>
-                    <input type="text" id="new-lat" readonly class="w-full p-2 bg-slate-800 border border-slate-700 rounded text-slate-400 cursor-not-allowed">
-                </div>
-                <div>
-                    <label class="block text-slate-400 mb-1">Longitude</label>
-                    <input type="text" id="new-lng" readonly class="w-full p-2 bg-slate-800 border border-slate-700 rounded text-slate-400 cursor-not-allowed">
-                </div>
-            </div>
-            <div>
-                <label class="block text-slate-400 mb-1">Status Awal</label>
-                <select id="new-status" class="w-full p-2 bg-slate-800 border border-slate-700 rounded text-white focus:outline-none focus:ring-1 focus:ring-blue-500">
-                    <option value="online">Online</option>
-                    <option value="offline">Offline</option>
-                </select>
-            </div>
-            <div class="pt-2 flex justify-end gap-2">
-                <button type="button" onclick="closeModal()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded font-medium">Batal</button>
-                <button type="submit" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded font-bold shadow-md shadow-emerald-900/20">Simpan Titik</button>
-            </div>
-        </form>
-    </div>
+<!-- MAP -->
+<div id="map" class="flex-1"></div>
+
 </div>
 
 <script>
-// ================= MAP INITIALIZATION =================
-const map = L.map('map').setView([-5.1477, 119.4327], 13);
+const map = L.map('map').setView([-5.1477,119.4327], 13);
 
 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:19,
-    attribution: '&copy; OpenStreetMap contributors'
+    maxZoom:19
 }).addTo(map);
 
-// ================= CUSTOM ICON GENERATOR =================
-function createIcon(status, isDragging = false){
-    if (isDragging) {
-        return L.divIcon({ className:"", html: '<i class="fas fa-map-marker-alt marker-moving"></i>', iconAnchor: [12, 24] });
-    }
-    return L.divIcon({
-        className:"",
-        html: status === "online" 
-            ? '<i class="fas fa-home marker-online"></i>' 
-            : '<i class="fas fa-home marker-offline"></i>',
-        iconAnchor: [9, 11]
-    });
-}
-
-// ================= DATA SOURCE =================
 let customers = [
-    {id:1, name:"User A - Rumah Pak Budi", ip:"10.10.1.2", status:"online", lat:-5.14, lng:119.43},
-    {id:2, name:"User B - Kontrakan 3", ip:"10.10.1.3", status:"offline", lat:-5.15, lng:119.44},
-    {id:3, name:"User C - Toko Kelontong", ip:"10.10.1.4", status:"online", lat:-5.16, lng:119.45}
+ {id:1,name:"Pak Budi",ip:"10.10.1.2",status:"online",lat:-5.14,lng:119.43},
+ {id:2,name:"Toko 1",ip:"10.10.1.3",status:"offline",lat:-5.15,lng:119.44}
 ];
 
-let markerMap = {}; 
+let markerMap = {};
 let searchQuery = "";
-let activelyDraggingId = null; 
-let isAddMode = false; // Status apakah tombol "Tambah Pelanggan" sedang aktif
+let addMode = false;
+let tempLatLng = null;
 
-// ================= UPDATE UI & MARKERS =================
-function render() {
-    let onlineCount = 0;
-    let offlineCount = 0;
-    const listContainer = document.getElementById("list");
-    listContainer.innerHTML = "";
+function icon(status){
+ return L.divIcon({
+  html:`<i class="fa fa-home ${status==='online'?'marker-online':'marker-offline'}"></i>`
+ });
+}
 
-    customers.forEach(c => {
-        if(c.status === "online") onlineCount++;
-        else offlineCount++;
+function updatePopupContent(mk,c){
+ mk.bindPopup(`<b>${c.name}</b><br>${c.ip}<br>${c.status}`);
+}
 
-        // 1. FILTER PENCARIAN
-        if (searchQuery && !c.name.toLowerCase().includes(searchQuery) && !c.ip.includes(searchQuery)) {
-            if (markerMap[c.id]) {
-                map.removeLayer(markerMap[c.id]);
-                delete markerMap[c.id];
-            }
-            return; 
-        }
+function focusCustomer(id){
+ const c = customers.find(x=>x.id===id);
+ map.setView([c.lat,c.lng],16);
+ markerMap[id].openPopup();
+}
 
-        // 2. MANAJEMEN MARKER (UPDATE / CREATE)
-        if (!markerMap[c.id]) {
-            const mk = L.marker([c.lat, c.lng], {
-                draggable: true,
-                icon: createIcon(c.status)
-            }).addTo(map);
+function toggleAddMode(){
+ addMode=!addMode;
+ document.getElementById("hint").style.display = addMode?"block":"none";
+}
 
-            mk.on("dragstart", function() {
-                activelyDraggingId = c.id;
-                mk.setIcon(createIcon(c.status, true));
-            });
+map.on("click",e=>{
+ if(!addMode) return;
+ tempLatLng=e.latlng;
 
-            mk.on("drag", function(e) {
-                const pos = e.target.getLatLng();
-                mk.bindPopup(`
-                    <div class="text-xs text-slate-900">
-                        <b class="text-amber-600"><i class="fas fa-arrows-alt"></i> Menggeser lokasi...</b><br>
-                        <b>Lat:</b> ${pos.lat.toFixed(5)}<br>
-                        <b>Lng:</b> ${pos.lng.toFixed(5)}
-                    </div>
-                `).openPopup();
-            });
+ let name=prompt("Nama pelanggan?");
+ if(!name) return;
 
-            mk.on("dragend", function(e) {
-                const pos = e.target.getLatLng();
-                c.lat = pos.lat;
-                c.lng = pos.lng;
-                activelyDraggingId = null; 
+ let ip=prompt("IP PPPoE?");
+ if(!ip) return;
 
-                mk.setIcon(createIcon(c.status, false));
-                updatePopupContent(mk, c);
-                mk.openPopup();
+ customers.push({
+  id:Date.now(),
+  name,
+  ip,
+  status:"offline",
+  lat:e.latlng.lat,
+  lng:e.latlng.lng
+ });
 
-                console.log(`[UPDATE API] ID: ${c.id} | Koordinat Baru:`, pos.lat, pos.lng);
-                render(); 
-            });
+ addMode=false;
+ document.getElementById("hint").style.display="none";
+ render();
+});
 
-            markerMap[c.id] = mk;
-        } else {
-            if (activelyDraggingId !== c.id) {
-                markerMap[c.id].setLatLng([c.lat, c.lng]);
-                markerMap[c.id].setIcon(createIcon(c.status));
-            }
-        }
+function render(){
+ const list=document.getElementById("list");
+ list.innerHTML="";
 
-        if (activelyDraggingId !== c.id) {
-            updatePopupContent(markerMap[c.id], c);
-        }
+ customers.forEach(c=>{
+  if(searchQuery &&
+   !c.name.toLowerCase().includes(searchQuery) &&
+   !c.ip.includes(searchQuery)) return;
 
-        // 3. RENDER SIDEBAR LIST
-        const statusColor = c.status === "online" ? "text-green-400" : "text-red-400";
-        const statusBg = c.status === "online" ? "border-green-500/30" : "border-red-500/30";
-        
-        listContainer.innerHTML += `
-        <div onclick="focusCustomer(${c.id})" class="bg-slate-800 p-2.5 rounded text-xs border-l-4 ${statusBg} cursor-pointer hover:bg-slate-700 transition duration-150">
-            <div class="flex justify-between font-bold">
+  if(!markerMap[c.id]){
+    const mk=L.marker([c.lat,c.lng],{
+      draggable:true,
+      icon:icon(c.status)
+    }).addTo(map);
+
+    mk.on("dragend",e=>{
+      const pos=e.target.getLatLng();
+      c.lat=pos.lat;
+      c.lng=pos.lng;
+      render();
+    });
+
+    markerMap[c.id]=mk;
+  } else {
+    markerMap[c.id].setLatLng([c.lat,c.lng]);
+  }
+
+  updatePopupContent(markerMap[c.id],c);
+
+  list.innerHTML+=`
+  <div onclick="focusCustomer(${c.id})"
+  class="bg-slate-800 p-2 rounded text-xs cursor-pointer">
+    <b>${c.name}</b><br>
+    <span class="text-gray-400">${c.ip}</span>
+  </div>`;
+ });
+
+ document.getElementById("total").innerText=customers.length;
+}
+
+render();
+</script>
+
+</body>
+</html>
