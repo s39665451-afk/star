@@ -1,144 +1,143 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ST★R-NET - Layanan Terisolir</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PPPoE Real-Time Dashboard</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, Helvetica, sans-serif;
-      background: #FFFFFF;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100vh;
-    }
+<!-- Tailwind -->
+<script src="https://cdn.tailwindcss.com"></script>
 
-    .wrapper {
-      width: 100%;
-      max-width: 480px;
-      background: #ffffff;
-      border-radius: 12px;
-      overflow: hidden;
-      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
-    }
+<!-- Leaflet -->
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-    .header {
-      background: #3b82f6;
-      color: white;
-      padding: 18px;
-      text-align: center;
-    }
+<style>
+body { background:#0d1117; color:#c9d1d9; }
+.sidebar { background:#161b22; }
+#map { height:100%; width:100%; }
 
-    .header h1 {
-      margin: 0;
-      font-size: 20px;
-      letter-spacing: 1px;
-    }
+.leaflet-container {
+    background:#0d1117;
+}
 
-    .logo {
-      font-weight: bold;
-      font-size: 18px;
-    }
+/* dark tile effect */
+.leaflet-tile {
+    filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
 
-    .content {
-      padding: 25px;
-      text-align: center;
-    }
-
-    .icon {
-      font-size: 55px;
-      margin-bottom: 10px;
-    }
-
-    .status {
-      font-size: 22px;
-      color: #3b82f6;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    .desc {
-      font-size: 14px;
-      color: #555;
-      line-height: 1.5;
-      margin-bottom: 20px;
-    }
-
-    .box {
-      background: #f7f7f7;
-      border-left: 4px solid #e60012;
-      padding: 12px;
-      text-align: left;
-      font-size: 13px;
-      border-radius: 6px;
-      margin-bottom: 20px;
-    }
-
-    .btn {
-      display: block;
-      background: #3b82f6;
-      color: white;
-      padding: 12px;
-      text-decoration: none;
-      border-radius: 8px;
-      font-weight: bold;
-      margin-bottom: 10px;
-    }
-
-    .btn:hover {
-      background: #cc0010;
-    }
-
-    .btn-secondary {
-      background: #333;
-    }
-
-    .footer {
-      font-size: 11px;
-      color: #888;
-      text-align: center;
-      padding: 15px;
-    }
-  </style>
+.marker-online { background:green; }
+.marker-offline { background:red; }
+.marker-warning { background:orange; }
+</style>
 </head>
 
-<body>
+<body class="h-screen flex flex-col">
 
-<div class="wrapper">
+<header class="bg-[#161b22] p-2 text-xs flex justify-between">
+    <div>🌐 PPPoE DASHBOARD ISP REALTIME</div>
+    <div id="clock"></div>
+</header>
 
-  <div class="header">
-    <div class="logo">ST★R-NET</div>
-    <div>Layanan Internet Broadband</div>
-  </div>
+<div class="flex flex-1">
 
-  <div class="content">
-    <div class="icon">⚠️</div>
+<!-- SIDEBAR -->
+<div class="sidebar w-80 p-3 overflow-auto">
 
-    <div class="status">YUK BAYAR TAGIHANMU SEKARANG!!</div>
+    <div class="font-bold mb-2">Pelanggan</div>
 
-    <div class="desc">
-      Mohon maaf, layanan internet Anda saat ini sedang <b>dinonaktifkan sementara</b> 
-      karena terdapat tagihan yang belum diselesaikan.
+    <div onclick="fokusKePelanggan(-5.1476,119.4327,'Pelanggan_A')" class="p-2 bg-[#21262d] mb-2 cursor-pointer">
+        🏠 Pelanggan_A (ONLINE)
     </div>
 
-    <div class="box">
-      <b>Informasi Pelanggan</b><br><br>
-      • Status: Isolir Aktif<br>
-      • Penyebab: Tunggakan pembayaran<br>
-      • Solusi: Lakukan pembayaran untuk mengaktifkan kembali layanan
+    <div onclick="fokusKePelanggan(-5.1440,119.4390,'Pelanggan_B')" class="p-2 bg-[#21262d] mb-2 cursor-pointer">
+        🏠 Pelanggan_B (OFFLINE)
     </div>
 
-    <a class="btn" href="https://wa.me/628xxxxxxxxxx">Bayar / Hubungi Admin</a>
-    
-
-  <div class="footer">
-    © 2026 ST★R-NET - Terhubung dengan jaringan stabil & cepat
-  </div>
+    <div onclick="fokusKePelanggan(-5.1400,119.4310,'Pelanggan_C')" class="p-2 bg-[#21262d] mb-2 cursor-pointer">
+        🏠 Pelanggan_C (WARNING)
+    </div>
 
 </div>
+
+<!-- MAP -->
+<div id="map"></div>
+
+</div>
+
+<script>
+// CLOCK
+setInterval(()=>{
+    document.getElementById("clock").innerText = new Date().toLocaleTimeString();
+},1000);
+
+// INIT MAP
+const map = L.map('map').setView([-5.145,119.435], 13);
+
+// OSM TILE
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
+    maxZoom: 19,
+    attribution: '&copy; OpenStreetMap'
+}).addTo(map);
+
+// DATA PELANGGAN
+const pelanggan = [
+    {
+        name:"Pelanggan_A",
+        lat:-5.1476,
+        lng:119.4327,
+        status:"online"
+    },
+    {
+        name:"Pelanggan_B",
+        lat:-5.1440,
+        lng:119.4390,
+        status:"offline"
+    },
+    {
+        name:"Pelanggan_C",
+        lat:-5.1400,
+        lng:119.4310,
+        status:"warning"
+    }
+];
+
+// ICON FUNCTION
+function icon(status){
+    let color = "red";
+    if(status==="online") color="green";
+    if(status==="warning") color="orange";
+
+    return L.divIcon({
+        className:"",
+        html:`<div style="
+            background:${color};
+            width:14px;height:14px;
+            border-radius:50%;
+            border:2px solid white;
+            box-shadow:0 0 6px ${color};
+        "></div>`
+    });
+}
+
+// ADD MARKERS
+let markers = {};
+
+pelanggan.forEach(p=>{
+    let m = L.marker([p.lat,p.lng],{icon:icon(p.status)})
+    .addTo(map)
+    .bindPopup(`<b>${p.name}</b><br>Status: ${p.status.toUpperCase()}`);
+
+    markers[p.name] = m;
+});
+
+// FOKUS FUNCTION
+function fokusKePelanggan(lat,lng,name){
+    map.setView([lat,lng], 18);
+    markers[name].openPopup();
+}
+
+</script>
 
 </body>
 </html>
