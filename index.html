@@ -1,164 +1,144 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>PPPoE PRO LIVE DASHBOARD FIX</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ST★R-NET - Layanan Terisolir</title>
 
-<!-- Tailwind CDN -->
-<script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      background: #FFFFFF;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+    }
 
-<!-- Leaflet -->
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    .wrapper {
+      width: 100%;
+      max-width: 480px;
+      background: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.15);
+    }
 
-<!-- Font Awesome -->
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    .header {
+      background: #3b82f6;
+      color: white;
+      padding: 18px;
+      text-align: center;
+    }
 
-<style>
-body { background:#0b111e; color:#e2e8f0; }
-#map { height:100%; width:100%; }
-.marker-online { color:#22c55e; font-size:22px; }
-.marker-offline { color:#ef4444; font-size:22px; }
-.marker-moving { color:#eab308; font-size:24px; }
-.add-mode-active { cursor: crosshair !important; }
-</style>
+    .header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 1px;
+    }
+
+    .logo {
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .content {
+      padding: 25px;
+      text-align: center;
+    }
+
+    .icon {
+      font-size: 55px;
+      margin-bottom: 10px;
+    }
+
+    .status {
+      font-size: 22px;
+      color: #3b82f6;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .desc {
+      font-size: 14px;
+      color: #555;
+      line-height: 1.5;
+      margin-bottom: 20px;
+    }
+
+    .box {
+      background: #f7f7f7;
+      border-left: 4px solid #e60012;
+      padding: 12px;
+      text-align: left;
+      font-size: 13px;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+
+    .btn {
+      display: block;
+      background: #3b82f6;
+      color: white;
+      padding: 12px;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+
+    .btn:hover {
+      background: #cc0010;
+    }
+
+    .btn-secondary {
+      background: #333;
+    }
+
+    .footer {
+      font-size: 11px;
+      color: #888;
+      text-align: center;
+      padding: 15px;
+    }
+  </style>
 </head>
 
-<body class="h-screen flex flex-col overflow-hidden">
+<body>
 
-<header class="bg-slate-900 border-b border-slate-800 p-3 flex justify-between">
-    <div>
-        <h1 class="text-blue-400 font-bold text-sm">PPPoE LIVE ISP DASHBOARD</h1>
-        <p class="text-xs text-slate-400">Realtime + Map Edit</p>
+<div class="wrapper">
+
+  <div class="header">
+    <div class="logo">ST★R-NET</div>
+    <div>Layanan Internet Broadband</div>
+  </div>
+
+  <div class="content">
+    <div class="icon">⚠️</div>
+
+    <div class="status">YUK BAYAR TAGIHANMU SEKARANG!!</div>
+
+    <div class="desc">
+      Mohon maaf, layanan internet Anda saat ini sedang <b>dinonaktifkan sementara</b> 
+      karena terdapat tagihan yang belum diselesaikan.
     </div>
-</header>
 
-<div class="flex flex-1 overflow-hidden">
+    <div class="box">
+      <b>Informasi Pelanggan</b><br><br>
+      • Status: Isolir Aktif<br>
+      • Penyebab: Tunggakan pembayaran<br>
+      • Solusi: Lakukan pembayaran untuk mengaktifkan kembali layanan
+    </div>
 
-<!-- SIDEBAR -->
-<aside class="w-80 bg-slate-900 p-3 flex flex-col gap-2">
-    <input id="search" oninput="searchQuery=this.value.toLowerCase();render()"
-    class="p-2 bg-slate-800 rounded text-xs" placeholder="Cari pelanggan...">
+    <a class="btn" href="https://wa.me/628xxxxxxxxxx">Bayar / Hubungi Admin</a>
+    
 
-    <div id="list" class="flex-1 overflow-y-auto space-y-2"></div>
-
-    <button onclick="toggleAddMode()" class="bg-blue-600 p-2 rounded text-xs font-bold">
-        <i class="fa fa-plus"></i> Tambah Pelanggan
-    </button>
-
-    <p id="hint" class="text-xs text-yellow-400 hidden">Klik peta untuk tambah titik</p>
-</aside>
-
-<!-- MAP -->
-<div id="map" class="flex-1"></div>
+  <div class="footer">
+    © 2026 ST★R-NET - Terhubung dengan jaringan stabil & cepat
+  </div>
 
 </div>
-
-<script>
-const map = L.map('map').setView([-5.1477,119.4327], 13);
-
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{
-    maxZoom:19
-}).addTo(map);
-
-let customers = [
- {id:1,name:"Pak Budi",ip:"10.10.1.2",status:"online",lat:-5.14,lng:119.43},
- {id:2,name:"Toko 1",ip:"10.10.1.3",status:"offline",lat:-5.15,lng:119.44}
-];
-
-let markerMap = {};
-let searchQuery = "";
-let addMode = false;
-let tempLatLng = null;
-
-function icon(status){
- return L.divIcon({
-  html:`<i class="fa fa-home ${status==='online'?'marker-online':'marker-offline'}"></i>`
- });
-}
-
-function updatePopupContent(mk,c){
- mk.bindPopup(`<b>${c.name}</b><br>${c.ip}<br>${c.status}`);
-}
-
-function focusCustomer(id){
- const c = customers.find(x=>x.id===id);
- map.setView([c.lat,c.lng],16);
- markerMap[id].openPopup();
-}
-
-function toggleAddMode(){
- addMode=!addMode;
- document.getElementById("hint").style.display = addMode?"block":"none";
-}
-
-map.on("click",e=>{
- if(!addMode) return;
- tempLatLng=e.latlng;
-
- let name=prompt("Nama pelanggan?");
- if(!name) return;
-
- let ip=prompt("IP PPPoE?");
- if(!ip) return;
-
- customers.push({
-  id:Date.now(),
-  name,
-  ip,
-  status:"offline",
-  lat:e.latlng.lat,
-  lng:e.latlng.lng
- });
-
- addMode=false;
- document.getElementById("hint").style.display="none";
- render();
-});
-
-function render(){
- const list=document.getElementById("list");
- list.innerHTML="";
-
- customers.forEach(c=>{
-  if(searchQuery &&
-   !c.name.toLowerCase().includes(searchQuery) &&
-   !c.ip.includes(searchQuery)) return;
-
-  if(!markerMap[c.id]){
-    const mk=L.marker([c.lat,c.lng],{
-      draggable:true,
-      icon:icon(c.status)
-    }).addTo(map);
-
-    mk.on("dragend",e=>{
-      const pos=e.target.getLatLng();
-      c.lat=pos.lat;
-      c.lng=pos.lng;
-      render();
-    });
-
-    markerMap[c.id]=mk;
-  } else {
-    markerMap[c.id].setLatLng([c.lat,c.lng]);
-  }
-
-  updatePopupContent(markerMap[c.id],c);
-
-  list.innerHTML+=`
-  <div onclick="focusCustomer(${c.id})"
-  class="bg-slate-800 p-2 rounded text-xs cursor-pointer">
-    <b>${c.name}</b><br>
-    <span class="text-gray-400">${c.ip}</span>
-  </div>`;
- });
-
- document.getElementById("total").innerText=customers.length;
-}
-
-render();
-</script>
 
 </body>
 </html>
